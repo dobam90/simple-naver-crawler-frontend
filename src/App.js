@@ -62,7 +62,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>File Crawler</h1>
+      <h1>Simple Naver Blog Crawler</h1>
       <input type="file" onChange={handleFileChange} accept=".xlsx" />
       <button onClick={handleCrawl}>Start Crawling</button>
     </div>
