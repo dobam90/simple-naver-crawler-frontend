@@ -14,7 +14,7 @@ function App() {
   };
 
   const handleCrawl = async () => {
-    console.log(API_URL)
+    console.log('api : ' + API_URL)
     if (!file) {
       alert("Please select a file first.");
       return;
