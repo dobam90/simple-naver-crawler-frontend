@@ -91,14 +91,13 @@ function App() {
         link.setAttribute('download', 'results.csv');
         document.body.appendChild(link);
         link.click();
+
+        setIsLoading(false);
+        setCurrentKeyword("");
       };
       reader.readAsArrayBuffer(file);
     } catch (error) {
       console.error('Error during file processing:', error);
-    } finally {
-      // 모든 요청이 완료된 후 상태 업데이트
-      setIsLoading(false);
-      setCurrentKeyword("");
     }
   };
 
