@@ -8,7 +8,6 @@ const API_URL = process.env.REACT_APP_API_URL;
 function App() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [_, setResults] = useState([]);
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [progress, setProgress] = useState(0);
 
@@ -27,7 +26,6 @@ function App() {
 
     setIsLoading(true);
     setProgress(0);
-    setResults([]);
     setCurrentKeyword("");
 
     try {
@@ -82,8 +80,6 @@ function App() {
           await delay(1000); // 1초 대기
         }
 
-        setResults(allResults);
-
         // CSV 변환
         const csv = unparse(allResults);
 
@@ -100,8 +96,9 @@ function App() {
     } catch (error) {
       console.error('Error during file processing:', error);
     } finally {
-      // setIsLoading(false);
-      // setCurrentKeyword("");
+      // 모든 요청이 완료된 후 상태 업데이트
+      setIsLoading(false);
+      setCurrentKeyword("");
     }
   };
 
