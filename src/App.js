@@ -8,7 +8,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 function App() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState([]);
+  const [_, setResults] = useState([]);
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [progress, setProgress] = useState(0);
 
