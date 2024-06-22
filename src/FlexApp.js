@@ -5,7 +5,7 @@ import { unparse } from 'papaparse';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-function App() {
+function FlexApp() {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentKeyword, setCurrentKeyword] = useState("");
@@ -108,8 +108,8 @@ function App() {
   }, [currentKeyword, progress, isLoading]);
 
   return (
-    <div className="App">
-      <h1>Simple Naver Blog Crawler</h1>
+    <div className="FlexApp">
+      <h1>Simple Flex Naver Blog Crawler</h1>
       <input type="file" onChange={handleFileChange} accept=".xlsx" />
       <button onClick={handleCrawl} disabled={isLoading}>
         {isLoading ? 'Crawling...' : 'Start Crawling'}
@@ -120,4 +120,4 @@ function App() {
   );
 }
 
-export default App;
+export default FlexApp;
