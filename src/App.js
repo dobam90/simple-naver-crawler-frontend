@@ -10,6 +10,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [progress, setProgress] = useState(0);
+  const [viewMode, setViewMode] = useState("keyword");
+  const [crawlResults, setCrawlResults] = useState([]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -27,6 +29,7 @@ function App() {
     setIsLoading(true);
     setProgress(0);
     setCurrentKeyword("");
+    setCrawlResults([]);
 
     try {
       const reader = new FileReader();
@@ -38,14 +41,8 @@ function App() {
         const worksheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        console.log('Raw JSON from Excel:', json); // Debug log
-
-        // 데이터 필터링: 빈 행이나 올바르지 않은 데이터를 제외
         const filteredData = json.filter(row => row.length === 2 && row[0] && row[1]);
 
-        console.log('Filtered JSON Data:', filteredData); // Debug log
-
-        // 키워드별로 데이터 그룹화
         const groupedData = filteredData.reduce((acc, row) => {
           const keyword = row[0];
           const blogId = row[1];
@@ -55,8 +52,6 @@ function App() {
           acc[keyword].push(blogId);
           return acc;
         }, {});
-
-        console.log('Grouped Data:', groupedData); // Debug log
 
         const keywords = Object.keys(groupedData);
         const totalRequests = keywords.length;
@@ -76,22 +71,11 @@ function App() {
           } catch (error) {
             console.error(`Error for keyword ${keyword}:`, error);
           }
-          setProgress(((i + 1) / totalRequests) * 100); // 진행상황 업데이트
-          await delay(100); // 1초 대기
+          setProgress(((i + 1) / totalRequests) * 100);
+          await delay(100);
         }
 
-        // CSV 변환
-        const csv = unparse(allResults);
-
-        // CSV 파일로 저장
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'results.csv');
-        document.body.appendChild(link);
-        link.click();
-
+        setCrawlResults(allResults);
         setIsLoading(false);
         setCurrentKeyword("");
       };
@@ -99,6 +83,36 @@ function App() {
     } catch (error) {
       console.error('Error during file processing:', error);
     }
+  };
+
+  const handleDownload = () => {
+    let processedData;
+    if (viewMode === "keyword") {
+      processedData = crawlResults.map(result => ({
+        Keyword: result.Keyword,
+        BlogID: result["Blog ID"],
+        Section: result.Section,
+        Position: result.Position,
+        Title: result.Title,
+      }));
+    } else {
+      processedData = crawlResults.map(result => ({
+        BlogID: result["Blog ID"],
+        Keyword: result.Keyword,
+        Section: result.Section,
+        Position: result.Position,
+        Title: result.Title,
+      }));
+    }
+
+    const csv = unparse(processedData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'results.csv');
+    document.body.appendChild(link);
+    link.click();
   };
 
   useEffect(() => {
@@ -116,6 +130,29 @@ function App() {
       </button>
       {isLoading && <p>Current keyword: {currentKeyword}</p>}
       {isLoading && <p>Progress: {progress.toFixed(2)}%</p>}
+      <div>
+        <label>
+          <input
+            type="radio"
+            value="keyword"
+            checked={viewMode === "keyword"}
+            onChange={() => setViewMode("keyword")}
+          />
+          View by Keyword
+        </label>
+        <label>
+          <input
+            type="radio"
+            value="id"
+            checked={viewMode === "id"}
+            onChange={() => setViewMode("id")}
+          />
+          View by ID
+        </label>
+      </div>
+      <button onClick={handleDownload} disabled={isLoading || !crawlResults.length}>
+        Download Results
+      </button>
     </div>
   );
 }
