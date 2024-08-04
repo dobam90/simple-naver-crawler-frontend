@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { ref, update, get } from 'firebase/database';
 import { database } from './firebase';
-import * as XLSX from 'xlsx';  // XLSX 라이브러리 가져오기
+import * as XLSX from 'xlsx';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -11,16 +11,10 @@ function Crawl({ fileData }) {
   const [currentKeyword, setCurrentKeyword] = useState("");
   const [progress, setProgress] = useState(0);
   const [crawlResults, setCrawlResults] = useState({});
-  const [lastIndex, setLastIndex] = useState(0); // 마지막으로 멈춘 인덱스
+  const [lastIndex, setLastIndex] = useState(0);
   const shouldStop = useRef(false);
 
-  useEffect(() => {
-    loadCrawlResults();
-  }, [fileData.id]);
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const loadCrawlResults = async () => {
+  const loadCrawlResults = useCallback(async () => {
     const dbRef = ref(database, `fileData/${fileData.id}/results`);
     const snapshot = await get(dbRef);
     if (snapshot.exists()) {
@@ -28,7 +22,13 @@ function Crawl({ fileData }) {
       setCrawlResults(results);
       setLastIndex(Object.keys(results).length);
     }
-  };
+  }, [fileData.id]);
+
+  useEffect(() => {
+    loadCrawlResults();
+  }, [fileData.id, loadCrawlResults]);
+
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const handleCrawl = async (continueFromLast) => {
     setIsLoading(true);
@@ -56,7 +56,7 @@ function Crawl({ fileData }) {
 
       for (let i = startIndex; i < totalRequests; i++) {
         if (shouldStop.current) {
-          setLastIndex(i); // 크롤링 멈춘 위치 저장
+          setLastIndex(i);
           break;
         }
 
@@ -79,7 +79,6 @@ function Crawl({ fileData }) {
           }
           allResults[keyword] = allResults[keyword].concat(newResults);
 
-          // Firebase에 결과 업데이트
           const dbRef = ref(database, `fileData/${fileData.id}/results`);
           const updates = {};
           updates[keyword] = allResults[keyword];
@@ -108,7 +107,7 @@ function Crawl({ fileData }) {
   const handleDownload = () => {
     const headers = ["#", "Keyword", "BlogID", "Case", "Section", "Theme", "Position", "Title"];
     const dataToDownload = [headers];
-    fileData.data.slice(1).forEach((row) => {
+    fileData.data.slice(1).forEach((row, rowIndex) => {
       if (Array.isArray(row)) {
         const results = crawlResults[row[0]];
         if (results && results.length > 0) {

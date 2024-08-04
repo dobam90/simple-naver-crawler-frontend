@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
-import { ref, set, push } from 'firebase/database';
+import React, { useState, useEffect } from 'react';
+import { ref, set, push, onValue } from 'firebase/database';
 import { database } from './firebase';
 import * as XLSX from 'xlsx';
 
-function FileList({ fileList, onFileSelect, onFileUpload }) {
+function FileList({ onFileSelect }) {
   const [file, setFile] = useState(null);
+  const [fileList, setFileList] = useState([]);
+
+  useEffect(() => {
+    const dbRef = ref(database, 'fileData');
+    onValue(dbRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const files = [];
+        snapshot.forEach((childSnapshot) => {
+          const fileData = childSnapshot.val();
+          files.push({ id: childSnapshot.key, ...fileData });
+        });
+        setFileList(files);
+      }
+    });
+  }, []);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -31,7 +46,6 @@ function FileList({ fileList, onFileSelect, onFileUpload }) {
       set(newFileRef, { data: json, timestamp: Date.now(), fileName: file.name });
 
       alert('File uploaded successfully!');
-      onFileUpload();
     };
     reader.readAsArrayBuffer(file);
   };
@@ -41,13 +55,26 @@ function FileList({ fileList, onFileSelect, onFileUpload }) {
       <h2>데이터 목록</h2>
       <input type="file" onChange={handleFileChange} accept=".xlsx" />
       <button onClick={handleFileUpload}>파일 업로드</button>
-      <ul style={{ maxHeight: '400px', overflowY: 'scroll' }}>
-        {fileList.map(file => (
-          <li key={file.id} onClick={() => onFileSelect(file)}>
-            {file.fileName}
-          </li>
-        ))}
-      </ul>
+      <div style={{ maxHeight: '400px', overflowY: 'scroll' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
+          <thead>
+            <tr>
+              <th style={{ border: '1px solid black', textAlign: 'center' }}>#</th>
+              <th style={{ border: '1px solid black', textAlign: 'center' }}>File Name</th>
+              <th style={{ border: '1px solid black', textAlign: 'center' }}>Upload Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fileList.map((file, index) => (
+              <tr key={file.id} onClick={() => onFileSelect(file)}>
+                <td style={{ border: '1px solid black', textAlign: 'center' }}>{index + 1}</td>
+                <td style={{ border: '1px solid black', textAlign: 'center', cursor: 'pointer' }}>{file.fileName}</td>
+                <td style={{ border: '1px solid black', textAlign: 'center' }}>{new Date(file.timestamp).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
